@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InrabGram</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --border: #dbdbdb;
+            --blue: #0095f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; background-color: var(--bg); display: flex; justify-content: center;
+        }
+
+        .container {
+            width: 100%; max-width: 450px; background: white; min-height: 100vh;
+            border: 1px solid var(--border); position: relative; padding-bottom: 70px;
+        }
+
+        header {
+            position: sticky; top: 0; background: white; z-index: 10;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; border-bottom: 1px solid var(--border);
+        }
+
+        .logo { font-size: 1.5rem; font-weight: bold; font-style: italic; }
+        .logo-img { width: 30px; height: 30px; cursor: pointer; border-radius: 5px; }
+
+        #page-register {
+            position: absolute; inset: 0; background: white; z-index: 20;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        input {
+            width: 85%; padding: 10px; margin: 10px 0;
+            border: 1px solid var(--border); border-radius: 5px; background: #fafafa;
+        }
+
+        .btn {
+            background: var(--blue); color: white; border: none;
+            padding: 10px; width: 85%; border-radius: 5px; font-weight: bold; cursor: pointer;
+        }
+
+        .post { border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+        .post-header { display: flex; align-items: center; padding: 10px; }
+        .post-header img { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
+        .post-main-img { width: 100%; display: block; }
+        .post-btns { padding: 10px; display: flex; gap: 15px; }
+        .post-info { padding: 0 10px 10px; font-size: 14px; }
+
+        .comment-area { padding: 5px 10px 10px; border-top: 1px solid #f0f0f0; }
+        .comment-list { font-size: 13px; margin-bottom: 5px; color: #444; }
+        .comment-input { border: none; width: 70%; font-size: 13px; outline: none; }
+
+        nav {
+            position: fixed; bottom: 0; width: 100%; max-width: 450px;
+            background: white; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around; padding: 12px 0;
+        }
+
+        .nav-icon { cursor: pointer; }
+        .hidden { display: none !important; }
+
+        .profile-info { padding: 20px; display: flex; align-items: center; gap: 20px; }
+        .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+        .profile-grid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="page-register">
+        <div class="logo" style="font-size: 2.5rem;">InrabGram</div>
+        <input type="text" id="reg-name" placeholder="Nama Lengkap">
+        <input type="text" id="reg-class" placeholder="Kelas">
+        <p style="font-size: 12px; color: gray;">Pilih Foto Profil:</p>
+        <input type="file" id="reg-pic" accept="image/*">
+        <button class="btn" onclick="simpanAkun()">Buat Akun</button>
+    </div>
+
+    <header id="main-header" class="hidden">
+        <div class="logo">InrabGram</div>
+        <img id="btn-logout" class="logo-img" src="gram.png" onclick="tanyaLogout()" onerror="this.src='https://via.placeholder.com/30'">
+    </header>
+
+    <div id="view-home" class="view hidden">
+        <div id="feed"></div>
+    </div>
+
+    <div id="view-search" class="view hidden" style="padding: 15px;">
+        <input type="text" id="in-search" placeholder="Cari teman..." onkeyup="cariTeman()">
+        <div id="search-results" style="margin-top:15px"></div>
+    </div>
+
+    <div id="view-upload" class="view hidden" style="padding: 20px; text-align: center;">
+        <h3>Upload Postingan</h3>
+        <input type="file" id="up-file">
+        <input type="text" id="up-caption" placeholder="Tulis deskripsi...">
+        <button class="btn" onclick="prosesUpload()">Posting</button>
+    </div>
+
+    <div id="view-account" class="view hidden">
+        <div class="profile-info">
+            <img id="my-pic" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+            <div>
+                <h3 id="my-name" style="margin:0"></h3>
+                <p id="my-class" style="color:gray; margin:0"></p>
+            </div>
+        </div>
+        <div id="my-grid" class="profile-grid"></div>
+    </div>
+
+    <nav id="main-nav" class="hidden">
+        <div class="nav-icon" onclick="bukaHalaman('view-home')"><i data-lucide="home"></i></div>
+        <div class="nav-icon" onclick="bukaHalaman('view-search')"><i data-lucide="search"></i></div>
+        <div class="nav-icon" onclick="bukaHalaman('view-upload')"><i data-lucide="plus-square"></i></div>
+        <div class="nav-icon" onclick="bukaHalaman('view-account')"><i data-lucide="user"></i></div>
+    </nav>
+</div>
+
+<script>
+    // DATA DEFAULT (Postingan yang ingin kamu munculkan di awal)
+    const postDefault = [
+        {
+            userNama: "Alvaro Maheswara",
+            userKelas: "Admin",
+            userFoto: "ea79b0880fbe87af75d576ce6de6ca8a.jpg",
+            gambar: "WhatsApp Image 2026-03-01 at 18.44.46.jpeg",
+            caption: "Kapan bukberrr lagii",
+            komentar: []
+        },
+        {
+            userNama: "Admin.InrabGram",
+            userKelas: "System",
+            userFoto: "images (1).jpg",
+            gambar: "gram.png",
+            caption: "Selamat datang di InrabGram! Ayo upload foto serumu bareng temen kelas!",
+            komentar: []
+        },
+        {
+            userNama: "Alvaro Maheswara",
+            userKelas: "Admin",
+            userFoto: "ea79b0880fbe87af75d576ce6de6ca8a.jpg",
+            gambar: "WhatsApp Image 2026-01-16 at 18.30.00.jpg",
+            caption: "Selamat datang di InrabGram! #Saadvers",
+            komentar: []
+        }
+    ];
+
+    let saya = JSON.parse(localStorage.getItem('user_inrab')) || null;
+    let semuaPost = JSON.parse(localStorage.getItem('posts_inrab')) || postDefault;
+
+    window.onload = function() {
+        if(saya) {
+            masukKeApp();
+        }
+        lucide.createIcons();
+    };
+
+    function simpanAkun() {
+        const n = document.getElementById('reg-name').value;
+        const k = document.getElementById('reg-class').value;
+        const p = document.getElementById('reg-pic').files[0];
+
+        if(!n || !k || !p) return alert("Isi semua dulu!");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saya = { nama: n, kelas: k, foto: e.target.result };
+            localStorage.setItem('user_inrab', JSON.stringify(saya));
+            masukKeApp();
+        };
+        reader.readAsDataURL(p);
+    }
+
+    function masukKeApp() {
+        document.getElementById('page-register').classList.add('hidden');
+        document.getElementById('main-header').classList.remove('hidden');
+        document.getElementById('main-nav').classList.remove('hidden');
+        
+        document.getElementById('my-pic').src = saya.foto;
+        document.getElementById('my-name').innerText = saya.nama;
+        document.getElementById('my-class').innerText = saya.kelas;
+
+        bukaHalaman('view-home');
+        renderFeed();
+    }
+
+    function renderFeed() {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = '';
+
+        semuaPost.forEach((p, index) => {
+            const html = `
+                <div class="post">
+                    <div class="post-header">
+                        <img src="${p.userFoto}" onerror="this.src='https://via.placeholder.com/32'">
+                        <strong>${p.userNama} (${p.userKelas})</strong>
+                    </div>
+                    <img class="post-main-img" src="${p.gambar}" onerror="this.src='https://via.placeholder.com/400x300?text=Gambar+Tidak+Ditemukan'">
+                    <div class="post-btns">
+                        <i data-lucide="heart" onclick="this.style.fill='red';this.style.color='red'"></i>
+                        <i data-lucide="send" onclick="alert('Link disalin!')"></i>
+                    </div>
+                    <div class="post-info"><b>${p.userNama}</b> ${p.caption}</div>
+                    <div class="comment-area">
+                        <div id="list-komentar-${index}" class="comment-list">
+                            ${(p.komentar || []).map(k => `<div><b>${k.nama}:</b> ${k.teks}</div>`).join('')}
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <input type="text" class="comment-input" id="input-komentar-${index}" placeholder="Tambah komentar...">
+                            <button onclick="kirimKomentar(${index})" style="border:none; background:none; color:blue; font-weight:bold; cursor:pointer">Kirim</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            feed.innerHTML += html;
+        });
+        lucide.createIcons();
+    }
+
+    function prosesUpload() {
+        const file = document.getElementById('up-file').files[0];
+        const cap = document.getElementById('up-caption').value;
+        if(!file) return alert("Pilih foto!");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const baru = {
+                userNama: saya.nama,
+                userKelas: saya.kelas,
+                userFoto: saya.foto,
+                gambar: e.target.result,
+                caption: cap,
+                komentar: []
+            };
+            semuaPost.unshift(baru);
+            localStorage.setItem('posts_inrab', JSON.stringify(semuaPost));
+            
+            document.getElementById('up-file').value = '';
+            document.getElementById('up-caption').value = '';
+            bukaHalaman('view-home');
+            renderFeed();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function kirimKomentar(idx) {
+        const inp = document.getElementById(`input-komentar-${idx}`);
+        if(!inp.value) return;
+
+        semuaPost[idx].komentar.push({ nama: saya.nama, teks: inp.value });
+        localStorage.setItem('posts_inrab', JSON.stringify(semuaPost));
+        inp.value = '';
+        renderFeed();
+    }
+
+    function bukaHalaman(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        if(id === 'view-account') renderProfile();
+    }
+
+    function renderProfile() {
+        const grid = document.getElementById('my-grid');
+        grid.innerHTML = '';
+        semuaPost.filter(p => p.userNama === saya.nama).forEach(p => {
+            grid.innerHTML += `<img src="${p.gambar}">`;
+        });
+    }
+
+    function cariTeman() {
+        const q = document.getElementById('in-search').value.toLowerCase();
+        const res = document.getElementById('search-results');
+        if(!q) { res.innerHTML = ''; return; }
+        
+        const hasil = semuaPost.filter(p => p.userNama.toLowerCase().includes(q));
+        res.innerHTML = hasil.map(p => `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px">
+                <img src="${p.userFoto}" style="width:35px; height:35px; border-radius:50%">
+                <div><b>${p.userNama}</b><br><small>${p.userKelas}</small></div>
+            </div>
+        `).join('');
+    }
+
+    function tanyaLogout() {
+        if(confirm("Mau logout dari InrabGram?")) {
+            localStorage.removeItem('user_inrab');
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
